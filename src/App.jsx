@@ -1,25 +1,62 @@
-import { useState } from 'react'
+import React from 'react'
 import './index.scss'
-import { questions } from './questions'
-import Result from './Result'
-import Game from './Game'
+import { Success } from './components/Success'
+import { Users } from './components/Users'
+import { useState } from 'react'
+import { useEffect } from 'react'
+
+// Тут список пользователей: https://reqres.in/api/users
 
 const App = () => {
-  const [step, setStep] = useState(0)
-  const [correct, setCorrect] = useState(0)
-  const question = questions[step]
-  const onClickVariant = index => {
-    setStep(step + 1)
-    if (index === question.correct) {
-      setCorrect(correct + 1)
+  const [users, setUsers] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchValue, setSearchValue] = useState('')
+  const [invites, setInvites] = useState([])
+  const [success, setSuccess] = useState(false)
+
+  useEffect(() => {
+    fetch('https://reqres.in/api/users')
+      .then(res => res.json())
+      .then(json => {
+        setUsers(json.data)
+      })
+      .catch(err => {
+        console.warn(err)
+        alert('Error')
+      })
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  const onChangeSearchValue = e => {
+    setSearchValue(e.target.value)
+  }
+
+  const onClickInvite = id => {
+    if (invites.includes(id)) {
+      setInvites(prev => prev.filter(_id => _id !== id))
+    } else {
+      setInvites(prev => [...prev, id])
     }
   }
+
+  const onClickSendInvites = () => {
+    setSuccess(!success)
+  }
+
   return (
     <div className="App">
-      {step !== questions.length ? (
-        <Game step={step} question={question} onClickVariant={onClickVariant} />
+      {success ? (
+        <Success setSuccess={setSuccess} success={success} count={invites.length}/>
       ) : (
-        <Result correct={correct} setStep={setStep} setCorrect={setCorrect} />
+        <Users
+          onChangeSearchValue={onChangeSearchValue}
+          searchValue={searchValue}
+          items={users}
+          isLoading={isLoading}
+          invites={invites}
+          onClickInvite={onClickInvite}
+          onClickSendInvites={onClickSendInvites}
+        />
       )}
     </div>
   )
